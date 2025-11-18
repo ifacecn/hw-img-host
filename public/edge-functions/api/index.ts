@@ -1,3 +1,3 @@
-import { onRequestOptions, onRequest } from './[[default]]'
+import { onRequestOptions, onRequestPost } from './[[default]]'
 
-export { onRequestOptions, onRequest }
+export { onRequestOptions, onRequestPost }
