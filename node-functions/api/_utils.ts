@@ -11,6 +11,8 @@ async function uploadToCnb({ fileBuffer, fileName, type = 'imgs' }) {
   const fileSize = fileBuffer.length
   const metaUrl = `https://api.cnb.cool/${process.env.SLUG_IMG}/-/upload/${type}`
 
+  console.log(metaUrl)
+  console.log(process.env.SLUG_IMG, process.env.TOKEN_IMG)
   const metaResp = await fetch(metaUrl, {
     method: 'POST',
     headers: {
