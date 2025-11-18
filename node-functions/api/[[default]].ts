@@ -1,115 +1,94 @@
-interface GeoProperties {
-  asn: number
-  countryName: string
-  countryCodeAlpha2: string
-  countryCodeAlpha3: string
-  countryCodeNumeric: string
-  regionName: string
-  regionCode: string
-  cityName: string
-  latitude: number
-  longitude: number
-  cisp: string
-}
+import express from 'express'
+import { uploadToCnb } from './_utils'
+import { reply } from './_reply'
+import multer from 'multer'
+const upload = multer()
+const app = express()
 
-interface IncomingRequestEoProperties {
-  geo: GeoProperties
-  uuid: string
-  clientIp: string
-}
+app.use((req, res, next) => {
+  console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`)
+  next()
+})
 
-interface EORequest extends Request {
-  readonly eo: IncomingRequestEoProperties
-}
+app.get('/', (req, res) => {
+  res.json({ message: 'Hello from Express on Node Functions!' })
+})
 
-// 处理 OPTIONS 预检请求
-export async function onRequestOptions() {
-  return new Response(null, {
-    status: 200,
-    headers: {
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-      'Access-Control-Allow-Headers': '*',
-    },
-  })
-}
+app.get('/users/:id', (req, res) => {
+  const { id } = req.params
+  res.json({ userId: id, message: `Fetched user ${id}` })
+})
+
+app.post(
+  '/upload/img',
+  upload.fields([
+    { name: 'file', maxCount: 1 },
+    { name: 'thumbnail', maxCount: 1 },
+  ]),
+  async (req, res) => {
+    try {
+      console.log('Received upload request:', req.files)
+      if (!req.files || !req.files.file) {
+        return res.status(400).json(reply(1, '未上传文件', ''))
+      }
+
+      const mainFile = req.files.file[0]
+      const thumbnailFile = req.files.thumbnail?.[0]
+
+      // 上传主图
+      const mainResult = await uploadToCnb({
+        fileBuffer: mainFile.buffer,
+        fileName: mainFile.originalname,
+      })
+
+      const baseUrl = process.env.BASE_IMG_URL
+
+      const mainImgPath = extractImagePath(mainResult.url)
+      const mainUrl = baseUrl + mainImgPath
+
+      let thumbnailUrl = null
+      let thumbnailAssets = null
+
+      // 上传缩略图
+      if (thumbnailFile) {
+        const thumbnailResult = await uploadToCnb({
+          fileBuffer: thumbnailFile.buffer,
+          fileName: thumbnailFile.originalname,
+        })
+
+        const thumbnailImgPath = extractImagePath(thumbnailResult.url)
+        thumbnailUrl = baseUrl + thumbnailImgPath
+        thumbnailAssets = thumbnailResult.assets
+      }
+
+      res.json(
+        reply(0, '上传成功', {
+          url: mainUrl,
+          thumbnailUrl: thumbnailUrl,
+          assets: mainResult.assets,
+          thumbnailAssets: thumbnailAssets,
+          hasThumbnail: !!thumbnailFile,
+        }),
+      )
+    } catch (err) {
+      console.error('上传失败:', err.response?.data || err.message)
+      res.status(500).json(reply(1, '上传失败', err.message))
+    }
+  },
+)
 
 /**
- * 上传文件到 cnb.cool 仓库
- * @param {Object} options - 上传配置对象
- * @param {Buffer} options.fileBuffer - 文件二进制数据
- * @param {string} options.fileName - 文件名
- * @param {string} [options.slug=process.env.SLUG_IMG] - 仓库路径（默认读环境变量）
- * @param {string} [options.type="imgs"] - 上传类型（控制URL的`-/upload/`后部分，默认"imgs"）
- * @returns {Promise<{assets: object, url: string}>}
+ * 从 URL 中提取图片路径
+ * @param {string} url - 完整的 URL
+ * @returns {string} - 提取的图片路径
  */
-// async function uploadToCnb({ fileBuffer, fileName, req, type = 'imgs' }) {
-//   const fileSize = fileBuffer.length
-//   const metaUrl = `https://api.cnb.cool/${req.env.SLUG_IMG}/-/upload/${type}`
-
-//   const metaResp = await fetch(metaUrl, {
-//     method: 'POST',
-//     headers: {
-//       Authorization: `Bearer ${req.env.TOKEN_IMG}`,
-//       'Content-Type': 'application/json',
-//     },
-//     body: JSON.stringify({ name: fileName, size: fileSize }),
-//   })
-
-//   if (!metaResp.ok) {
-//     throw new Error(`Failed to get upload URL: ${metaResp.status} ${metaResp.statusText}`)
-//   }
-
-//   const { assets, upload_url } = await metaResp.json()
-
-//   const controller = new AbortController()
-//   const timeoutId = setTimeout(() => controller.abort(), 30000)
-
-//   try {
-//     const uploadResp = await fetch(upload_url, {
-//       method: 'PUT',
-//       headers: { 'Content-Type': 'application/octet-stream' },
-//       body: fileBuffer,
-//       signal: controller.signal,
-//     })
-
-//     clearTimeout(timeoutId)
-
-//     if (!uploadResp.ok) {
-//       throw new Error(`Failed to upload file: ${uploadResp.status} ${uploadResp.statusText}`)
-//     }
-
-//     return { assets, url: assets['path'] }
-//   } catch (error) {
-//     clearTimeout(timeoutId)
-//     if (error.name === 'AbortError') {
-//       throw new Error('Upload timeout after 30 seconds')
-//     }
-//     throw error
-//   }
-// }
-
-// 处理所有请求
-export async function onRequestPost({ request }: { request: EORequest }) {
-  try {
-    const data = request.body
-
-    const res = new Response(JSON.stringify(data), {
-      status: 200,
-      headers: {
-        'content-type': 'application/json',
-        'Access-Control-Allow-Origin': '*',
-      },
-    })
-    return res
-  } catch (e) {
-    // 返回错误
-    return new Response(JSON.stringify({ error: e?.message }), {
-      status: 502,
-      headers: {
-        'content-type': 'application/json',
-        'Access-Control-Allow-Origin': '*',
-      },
-    })
+function extractImagePath(url) {
+  if (url.includes('-/imgs/')) {
+    return url.split('-/imgs/')[1]
+  } else if (url.includes('-/files/')) {
+    return url.split('-/files/')[1]
   }
+  return url
 }
+
+export default app
