@@ -105,80 +105,117 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref } from 'vue'
-import axios from 'axios'
+import axios, { type AxiosProgressEvent } from 'axios'
 import { Button } from '@/components/ui/button'
 import { Progress } from '@/components/ui/progress'
 import { toast } from 'vue-sonner'
 import { CheckCircle2, XCircle, LoaderIcon } from 'lucide-vue-next'
 
-const props = defineProps({
-  belongTo: {
-    type: String,
-    default: 'mindmap',
-  },
+interface Props {
+  belongTo?: string
   // 原图配置
-  maxWidth: {
-    type: Number,
-    default: 0, // 0 表示不限制，保持原始尺寸
-  },
-  maxHeight: {
-    type: Number,
-    default: 0, // 0 表示不限制，保持原始尺寸
-  },
-  quality: {
-    type: Number,
-    default: 0.7, // 原图压缩质量
-  },
+  maxWidth?: number // 0 表示不限制，保持原始尺寸
+  maxHeight?: number // 0 表示不限制，保持原始尺寸
+  quality?: number // 原图压缩质量
   // 缩略图配置
-  generateThumbnail: {
-    type: Boolean,
-    default: false, // 是否生成缩略图
-  },
-  thumbnailMaxWidth: {
-    type: Number,
-    default: 200, // 缩略图最大宽度
-  },
-  thumbnailMaxHeight: {
-    type: Number,
-    default: 200, // 缩略图最大高度
-  },
-  thumbnailQuality: {
-    type: Number,
-    default: 0.9, // 缩略图质量
-  },
+  generateThumbnail?: boolean // 是否生成缩略图
+  thumbnailMaxWidth?: number // 缩略图最大宽度
+  thumbnailMaxHeight?: number // 缩略图最大高度
+  thumbnailQuality?: number // 缩略图质量
+}
+
+interface UploadInfo {
+  url: string
+  thumbnailUrl: string
+  name: string
+  size: number
+  type: string
+  compressionRatio: number
+  width: number
+  height: number
+  hasThumbnail: boolean
+  thumbnailWidth: number
+  thumbnailHeight: number
+  thumbnailSize: number
+}
+
+interface CompressResult {
+  compressedFile: File
+  width: number
+  height: number
+}
+
+interface ThumbnailResult {
+  thumbnailFile: File
+  previewUrl: string
+  width: number
+  height: number
+  size: number
+}
+
+interface UploadResponse {
+  code: number
+  msg?: string
+  data: {
+    url: string
+    thumbnailUrl?: string
+  }
+}
+
+const props = withDefaults(defineProps<Props>(), {
+  belongTo: 'mindmap',
+  maxWidth: 0,
+  maxHeight: 0,
+  quality: 0.7,
+  generateThumbnail: false,
+  thumbnailMaxWidth: 200,
+  thumbnailMaxHeight: 200,
+  thumbnailQuality: 0.9,
 })
 
-const emit = defineEmits(['update:uploadInfo'])
+const emit = defineEmits<{
+  'update:uploadInfo': [uploadInfo: UploadInfo]
+}>()
 
-const file = ref(null)
-const thumbnailFile = ref(null)
-const thumbnailPreview = ref('')
-const thumbnailWidth = ref(0)
-const thumbnailHeight = ref(0)
-const thumbnailSize = ref(0)
-const uploadProgress = ref(0)
-const uploading = ref(false)
-const processing = ref(false)
-const uploadedUrl = ref('')
-const uploadedThumbnailUrl = ref('')
-const errorMsg = ref('')
-const isDragging = ref(false)
-const compressionRatio = ref(0)
-const imageWidth = ref(0)
-const imageHeight = ref(0)
+const file = ref<File | null>(null)
+const thumbnailFile = ref<File | null>(null)
+const thumbnailPreview = ref<string>('')
+const thumbnailWidth = ref<number>(0)
+const thumbnailHeight = ref<number>(0)
+const thumbnailSize = ref<number>(0)
+const uploadProgress = ref<number>(0)
+const uploading = ref<boolean>(false)
+const processing = ref<boolean>(false)
+const uploadedUrl = ref<string>('')
+const uploadedThumbnailUrl = ref<string>('')
+const errorMsg = ref<string>('')
+const isDragging = ref<boolean>(false)
+const compressionRatio = ref<number>(0)
+const imageWidth = ref<number>(0)
+const imageHeight = ref<number>(0)
 
-async function compressImageToWebp(file, quality = 0.7, maxWidth = 0, maxHeight = 0) {
+async function compressImageToWebp(
+  file: File,
+  quality: number = 0.7,
+  maxWidth: number = 0,
+  maxHeight: number = 0,
+): Promise<CompressResult> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader()
     reader.readAsDataURL(file)
-    reader.onload = (e) => {
+    reader.onload = (e: ProgressEvent<FileReader>) => {
       const img = new Image()
-      img.src = e.target.result
+      img.src = e.target?.result as string
       img.onload = () => {
         const canvas = document.createElement('canvas')
         const ctx = canvas.getContext('2d')
+
+        if (!ctx) {
+          reject(new Error('无法获取 canvas context'))
+          return
+        }
 
         let width = img.width
         let height = img.height
@@ -227,22 +264,27 @@ async function compressImageToWebp(file, quality = 0.7, maxWidth = 0, maxHeight 
           quality,
         )
       }
-      img.onerror = reject
+      img.onerror = () => reject(new Error('图片加载失败'))
     }
-    reader.onerror = reject
+    reader.onerror = () => reject(new Error('文件读取失败'))
   })
 }
 
-async function generateThumbnailImage(file) {
+async function generateThumbnailImage(file: File): Promise<ThumbnailResult> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader()
     reader.readAsDataURL(file)
-    reader.onload = (e) => {
+    reader.onload = (e: ProgressEvent<FileReader>) => {
       const img = new Image()
-      img.src = e.target.result
+      img.src = e.target?.result as string
       img.onload = () => {
         const canvas = document.createElement('canvas')
         const ctx = canvas.getContext('2d')
+
+        if (!ctx) {
+          reject(new Error('无法获取 canvas context'))
+          return
+        }
 
         // 计算缩略图尺寸，保持宽高比
         let width = img.width
@@ -283,24 +325,29 @@ async function generateThumbnailImage(file) {
           props.thumbnailQuality,
         )
       }
-      img.onerror = reject
+      img.onerror = () => reject(new Error('图片加载失败'))
     }
-    reader.onerror = reject
+    reader.onerror = () => reject(new Error('文件读取失败'))
   })
 }
 
-function onFileChange(e) {
-  const f = e.target.files?.[0]
-  handleFile(f)
+function onFileChange(e: Event): void {
+  const target = e.target as HTMLInputElement
+  const f = target.files?.[0]
+  if (f) {
+    handleFile(f)
+  }
 }
 
-function onDrop(e) {
+function onDrop(e: DragEvent): void {
   isDragging.value = false
-  const f = e.dataTransfer.files?.[0]
-  handleFile(f)
+  const f = e.dataTransfer?.files?.[0]
+  if (f) {
+    handleFile(f)
+  }
 }
 
-async function handleFile(f) {
+async function handleFile(f: File | null): Promise<void> {
   if (!f) {
     file.value = null
     thumbnailFile.value = null
@@ -347,7 +394,7 @@ async function handleFile(f) {
   }
 }
 
-async function uploadFile() {
+async function uploadFile(): Promise<void> {
   if (!file.value) {
     errorMsg.value = '请先选择文件'
     return
@@ -363,9 +410,9 @@ async function uploadFile() {
       formData.append('thumbnail', thumbnailFile.value)
     }
 
-    const { data } = await axios.post('/upload/img', formData, {
+    const { data } = await axios.post<UploadResponse>('/api/upload/img', formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
-      onUploadProgress: (e) => {
+      onUploadProgress: (e: AxiosProgressEvent) => {
         if (e.total) {
           uploadProgress.value = Math.round((e.loaded / e.total) * 100)
         }
@@ -380,7 +427,7 @@ async function uploadFile() {
     uploadedUrl.value = data.data.url
     uploadedThumbnailUrl.value = data.data.thumbnailUrl || ''
 
-    const uploadInfo = {
+    const uploadInfo: UploadInfo = {
       url: uploadedUrl.value,
       thumbnailUrl: uploadedThumbnailUrl.value,
       name: file.value.name,
@@ -399,7 +446,8 @@ async function uploadFile() {
     toast.success(data.msg || '上传成功')
   } catch (err) {
     console.error(err)
-    errorMsg.value = err.response?.data?.error || err.message || '上传失败'
+    const error = err as { response?: { data?: { error?: string } }; message?: string }
+    errorMsg.value = error.response?.data?.error || error.message || '上传失败'
     toast.error(errorMsg.value)
   } finally {
     uploading.value = false
