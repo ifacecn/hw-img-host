@@ -1,9 +1,19 @@
 import express from 'express'
-import { uploadToCnb } from './_utils'
+import { uploadToCnb, createProxyHandler } from './_utils'
 import { reply } from './_reply'
 import multer from 'multer'
 const upload = multer()
 const app = express()
+
+const requestConfig = {
+  responseType: 'arraybuffer',
+  timeout: 5000,
+  headers: {
+    Accept: 'image/*, */*',
+    'User-Agent': 'SeerImageProxy/1.0 (+https://seerinfo.yuyuqaq.cn)',
+  },
+}
+const BASE_URL = 'https://cnb.cool/' + process.env.SLUG_IMG + '/-/imgs/'
 
 app.use((req, res, next) => {
   console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`)
@@ -14,10 +24,7 @@ app.get('/', (req, res) => {
   res.json({ message: 'Hello from Express on Node Functions!' })
 })
 
-app.get('/users/:id', (req, res) => {
-  const { id } = req.params
-  res.json({ userId: id, message: `Fetched user ${id}` })
-})
+app.get('/img/*path', createProxyHandler(BASE_URL, requestConfig))
 
 app.post(
   '/upload/img',
