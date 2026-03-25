@@ -1,17 +1,39 @@
 {
   "version": 1,
-  "include": [
-    "/api/*",
-    "/*.webp",
-    "/*.jpg",
-    "/*.jpeg",
-    "/*.png",
-    "/*.gif",
-    "/*.bmp",
-    "/*.svg",
-    "/*.ico"
+  "functions": [
+    {
+      "source": "/api/*",
+      "function": "api/index"
+    },
+    {
+      "source": "/*.webp",
+      "function": "api/index"
+    },
+    {
+      "source": "/*.jpg",
+      "function": "api/index"
+    },
+    {
+      "source": "/*.jpeg",
+      "function": "api/index"
+    },
+    {
+      "source": "/*.png",
+      "function": "api/index"
+    },
+    {
+      "source": "/*.gif",
+      "function": "api/index"
+    },
+    {
+      "source": "/*.svg",
+      "function": "api/index"
+    }
   ],
-  "exclude": [
-    "/static/*"
+  "static": [
+    {
+      "source": "/((?!api|\\.(webp|jpg|jpeg|png|gif|svg)$).*)",
+      "destination": "/index.html"
+    }
   ]
 }
