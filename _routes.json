@@ -1,34 +1,13 @@
 {
   "version": 1,
   "functions": [
-    {
-      "source": "/api/*",
-      "function": "api/index"
-    },
-    {
-      "source": "/*.webp",
-      "function": "api/index"
-    },
-    {
-      "source": "/*.jpg",
-      "function": "api/index"
-    },
-    {
-      "source": "/*.jpeg",
-      "function": "api/index"
-    },
-    {
-      "source": "/*.png",
-      "function": "api/index"
-    },
-    {
-      "source": "/*.gif",
-      "function": "api/index"
-    },
-    {
-      "source": "/*.svg",
-      "function": "api/index"
-    }
+    { "source": "/api/*", "function": "api/index" },
+    { "source": "/*.webp", "function": "api/index" },
+    { "source": "/*.jpg", "function": "api/index" },
+    { "source": "/*.jpeg", "function": "api/index" },
+    { "source": "/*.png", "function": "api/index" },
+    { "source": "/*.gif", "function": "api/index" },
+    { "source": "/*.svg", "function": "api/index" }
   ],
   "static": [
     {
