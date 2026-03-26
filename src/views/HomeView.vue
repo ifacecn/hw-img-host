@@ -21,7 +21,7 @@ const uploadInfo = ref<{
         </div>
         <p class="mt-2 text-sm text-gray-500">支持拖拽上传 • 自动压缩 • 生成缩略图</p>
         <router-link
-          to="/admin"
+          to="#/admin"
           class="mt-4 inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-blue-500 to-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition hover:from-blue-600 hover:to-indigo-700"
         >
           <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
