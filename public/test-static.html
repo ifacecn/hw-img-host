@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>静态文件测试</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            text-align: center;
+            padding: 20px;
+        }
+        .container {
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 40px;
+            max-width: 800px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+        }
+        h1 {
+            font-size: 2.5em;
+            margin-bottom: 20px;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+        p {
+            font-size: 1.2em;
+            margin-bottom: 30px;
+            opacity: 0.9;
+            line-height: 1.6;
+        }
+        .test-buttons {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 30px 0;
+        }
+        button {
+            padding: 15px;
+            border: none;
+            border-radius: 12px;
+            background: white;
+            color: #4a6cf7;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+        }
+        button:active {
+            transform: translateY(0);
+        }
+        .status-box {
+            background: rgba(255,255,255,0.15);
+            border-radius: 12px;
+            padding: 20px;
+            margin-top: 30px;
+            text-align: left;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            overflow-wrap: break-word;
+        }
+        .status-box h3 {
+            margin-bottom: 10px;
+            color: #ffd700;
+            font-size: 16px;
+        }
+        pre {
+            white-space: pre-wrap;
+            word-break: break-all;
+            color: #fff;
+        }
+        .success { color: #4ade80; }
+        .error { color: #ef4444; }
+        .info { color: #60a5fa; }
+        .api-test {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin: 20px 0;
+        }
+        .api-test input {
+            flex: 1;
+            max-width: 300px;
+            padding: 12px;
+            border: 2px solid rgba(255,255,255,0.3);
+            border-radius: 8px;
+            background: rgba(255,255,255,0.1);
+            color: white;
+            font-size: 16px;
+        }
+        .api-test input::placeholder {
+            color: rgba(255,255,255,0.6);
+        }
+        .api-test button {
+            background: #10b981;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📡 静态文件测试</h1>
+        <p>此页面用于测试 EdgeOne Pages 静态文件服务是否正常</p>
+        
+        <div class="test-buttons">
+            <button onclick="testFile('/')">
+                📍 测试首页
+            </button>
+            <button onclick="testFile('/favicon.ico')">
+                🖼️ 测试 Favicon
+            </button>
+            <button onclick="testFile('/api/')">
+                🔌 测试 API
+            </button>
+            <button onclick="testFile('/simple-test.html')">
+                🔄 测试原版
+            </button>
+            <button onclick="window.location.reload()">
+                ♻️ 刷新页面
+            </button>
+            <button onclick="clearLog()">
+                🧹 清空日志
+            </button>
+        </div>
+        
+        <div class="api-test">
+            <input id="testUrl" type="text" placeholder="输入URL进行测试..." value="/api/">
+            <button onclick="customTest()">测试</button>
+        </div>
+        
+        <div class="status-box">
+            <h3>📊 测试结果</h3>
+            <pre id="log">页面加载时间: <span id="loadTime"></span>\n正在初始化...</pre>
+        </div>
+        
+        <p style="margin-top: 20px; font-size: 14px; opacity: 0.7;">
+            如果此页面显示正常，但 /simple-test.html 空白，可能是原版文件有问题
+        </p>
+    </div>
+
+    <script>
+        const logElement = document.getElementById('log');
+        const loadTimeElement = document.getElementById('loadTime');
+        const startTime = Date.now();
+        
+        function log(message, type = 'info') {
+            const time = new Date().toLocaleTimeString();
+            const logEntry = `[${time}] <span class="${type}">${message}</span>`;
+            logElement.innerHTML = logEntry + '\n' + logElement.innerHTML;
+            console.log(message);
+        }
+        
+        function clearLog() {
+            logElement.innerHTML = '';
+            log('日志已清空', 'info');
+        }
+        
+        async function testFile(url) {
+            const fullUrl = window.location.origin + url;
+            log(`测试: ${url}`, 'info');
+            
+            try {
+                const start = Date.now();
+                const response = await fetch(url);
+                const end = Date.now();
+                const duration = end - start;
+                
+                const status = `${response.status} ${response.statusText}`;
+                const contentType = response.headers.get('content-type') || 'unknown';
+                const contentLength = response.headers.get('content-length') || 'unknown';
+                
+                let contentPreview = '';
+                if (contentType.includes('text/html') || contentType.includes('application/json')) {
+                    const text = await response.text();
+                    contentPreview = text.substring(0, 200) + (text.length > 200 ? '...' : '');
+                }
+                
+                log(`✅ ${url} - ${status} (${duration}ms)`, 'success');
+                log(`   Content-Type: ${contentType}`, 'info');
+                log(`   Content-Length: ${contentLength}`, 'info');
+                if (contentPreview) {
+                    log(`   内容预览: ${contentPreview}`, 'info');
+                }
+                
+                // 如果是成功响应，更新页面标题
+                if (response.ok) {
+                    document.title = `✅ ${url} - 测试成功`;
+                }
+                
+            } catch (error) {
+                log(`❌ ${url} - ${error.message}`, 'error');
+                document.title = `❌ ${url} - 测试失败`;
+            }
+        }
+        
+        function customTest() {
+            const url = document.getElementById('testUrl').value.trim();
+            if (url) {
+                testFile(url);
+            }
+        }
+        
+        // 页面加载完成后自动测试几个关键文件
+        window.addEventListener('load', () => {
+            const loadTime = Date.now() - startTime;
+            loadTimeElement.textContent = `${loadTime}ms`;
+            log(`页面加载完成，耗时 ${loadTime}ms`, 'success');
+            
+            // 自动测试关键文件
+            setTimeout(() => testFile('/'), 500);
+            setTimeout(() => testFile('/favicon.ico'), 1000);
+            setTimeout(() => testFile('/simple-test.html'), 1500);
+        });
+        
+        // 捕获错误
+        window.addEventListener('error', (e) => {
+            log(`JavaScript错误: ${e.message}`, 'error');
+        });
+        
+        window.addEventListener('unhandledrejection', (e) => {
+            log(`未处理的Promise错误: ${e.reason}`, 'error');
+        });
+        
+        // 初始日志
+        log('页面初始化中...', 'info');
+        log(`当前URL: ${window.location.href}`, 'info');
+        log(`UserAgent: ${navigator.userAgent}`, 'info');
+    </script>
+</body>
+</html>
