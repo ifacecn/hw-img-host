@@ -26,7 +26,7 @@ const currentPage = ref(1)
 const pageSize = ref(20)
 const total = ref(0)
 const searchKeyword = ref('')
-const selectedImage = ref<string | null>(null)
+const selectedImage = ref<string>()
 const previewVisible = ref(false)
 const deleteConfirm = ref<string | null>(null)
 const copiedUrl = ref<string | null>(null)
@@ -277,7 +277,7 @@ onMounted(() => {
               <button
                 class="rounded-lg bg-white/90 p-2 text-gray-700 shadow transition hover:bg-white"
                 title="新窗口打开"
-                @click.stop="window.open(img.url, '_blank')"
+                @click.stop="() => { const win = window.open(img.url, '_blank'); if (win) win.focus(); }"
               >
                 <ExternalLink class="h-4 w-4" />
               </button>
