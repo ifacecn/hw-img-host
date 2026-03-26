@@ -60,32 +60,27 @@ async function handleLogin() {
 
     // 处理返回结果
     if (result && result.code === 0) {
-      console.log('登录成功，token:', result.data?.token)
+      console.log('✅ 登录成功，token:', result.data?.token)
       const token = result.data.token
-      console.log('将存储token到sessionStorage:', token.substring(0, 20) + '...')
+      console.log('🔑 Token前20位:', token.substring(0, 20) + '...')
       
+      // 存储token
       sessionStorage.setItem('admin_token', token)
       
       // 验证存储
       const storedToken = sessionStorage.getItem('admin_token')
-      console.log('验证sessionStorage存储:', storedToken?.substring(0, 20) + '...')
+      console.log('💾 sessionStorage存储验证:', storedToken?.substring(0, 20) + '...')
       
-      console.log('调用router.push("/admin")')
+      // 显示成功消息，然后跳转
+      error.value = '✅ 登录成功，正在跳转...'
+      loading.value = true
       
-      // 先用简单跳转测试
+      // 延迟1秒后强制跳转（让用户看到成功消息）
       setTimeout(() => {
-        console.log('定时器触发，测试直接跳转...')
+        console.log('⏱️ 1秒后强制跳转到 /admin')
         window.location.href = '/admin'
-      }, 100)
+      }, 1000)
       
-      // 同时尝试 Vue Router 跳转
-      try {
-        await router.push('/admin')
-        console.log('router.push成功调用，等待路由跳转...')
-      } catch (pushError) {
-        console.error('router.push错误:', pushError)
-        error.value = '跳转失败，请手动访问 /admin 或等待自动跳转'
-      }
     } else {
       error.value = result?.msg || '登录失败'
     }
