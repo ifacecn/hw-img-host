@@ -18,6 +18,11 @@ const router = createRouter({
       name: 'admin',
       component: () => import('../views/AdminView.vue'),
     },
+    {
+      path: '/debug',
+      name: 'debug',
+      component: () => import('../views/DebugView.vue'),
+    },
   ],
 })
 
