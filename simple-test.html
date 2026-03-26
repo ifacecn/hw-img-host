@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>简单路由测试</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        h1 { color: #333; }
+        .section {
+            margin: 24px 0;
+            padding: 16px;
+            border-radius: 8px;
+            background: #f9f9f9;
+        }
+        button {
+            margin: 4px 8px 4px 0;
+            padding: 8px 16px;
+            border: none;
+            border-radius: 6px;
+            background: #4a6cf7;
+            color: white;
+            cursor: pointer;
+        }
+        button:hover { opacity: 0.9; }
+        button.secondary { background: #666; }
+        pre {
+            background: #f0f0f0;
+            padding: 12px;
+            border-radius: 6px;
+            overflow-x: auto;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>简单路由测试</h1>
+        
+        <div class="section">
+            <h3>路由测试</h3>
+            <button onclick="window.location.href = '/'">原生跳转: 首页</button>
+            <button onclick="window.location.href = '/admin'">原生跳转: 管理页</button>
+            <button onclick="window.location.href = '/login'">原生跳转: 登录页</button>
+            <button onclick="window.location.href = '/debug'">原生跳转: 调试页</button>
+        </div>
+        
+        <div class="section">
+            <h3>SessionStorage 测试</h3>
+            <button onclick="sessionStorage.setItem('test_token', 'test-' + Date.now()); logStatus()">设置测试 Token</button>
+            <button onclick="sessionStorage.removeItem('admin_token'); logStatus()">清除 Admin Token</button>
+            <button onclick="sessionStorage.clear(); logStatus()">清除所有</button>
+        </div>
+        
+        <div class="section">
+            <h3>当前状态</h3>
+            <pre id="status"></pre>
+        </div>
+        
+        <div class="section">
+            <h3>环境检查</h3>
+            <button onclick="testFetch()">测试 API 连接</button>
+            <button onclick="console.log('环境变量:', import.meta.env)">打印环境变量</button>
+        </div>
+    </div>
+
+    <script>
+        function logStatus() {
+            const status = {
+                '当前URL': window.location.href,
+                '路径': window.location.pathname,
+                'sessionStorage.admin_token': sessionStorage.getItem('admin_token'),
+                'sessionStorage.test_token': sessionStorage.getItem('test_token'),
+                '所有sessionStorage': Object.keys(sessionStorage),
+                'UserAgent': navigator.userAgent,
+                '时间': new Date().toISOString()
+            };
+            document.getElementById('status').textContent = JSON.stringify(status, null, 2);
+        }
+        
+        async function testFetch() {
+            try {
+                const response = await fetch('/api/');
+                const data = await response.text();
+                console.log('API测试响应:', data);
+                alert('API连接成功: ' + data.substring(0, 100));
+            } catch (error) {
+                console.error('API测试失败:', error);
+                alert('API连接失败: ' + error.message);
+            }
+        }
+        
+        // 初始状态
+        logStatus();
+        
+        // 捕获错误
+        window.addEventListener('error', (e) => {
+            console.error('全局错误:', e.error);
+            document.getElementById('status').textContent += '\n\n错误: ' + e.error.message;
+        });
+        
+        console.log('测试页面加载完成');
+    </script>
+</body>
+</html>
