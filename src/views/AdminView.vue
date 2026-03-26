@@ -152,6 +152,12 @@ async function copyUrl(url: string) {
   }
 }
 
+// 新窗口打开图片
+function openImageInNewWindow(url: string) {
+  const win = window.open(url, '_blank')
+  if (win) win.focus()
+}
+
 // 预览图片
 function previewImage(url: string) {
   selectedImage.value = url
@@ -277,7 +283,7 @@ onMounted(() => {
               <button
                 class="rounded-lg bg-white/90 p-2 text-gray-700 shadow transition hover:bg-white"
                 title="新窗口打开"
-                @click.stop="() => { const win = window.open(img.url, '_blank'); if (win) win.focus(); }"
+                @click.stop="openImageInNewWindow(img.url)"
               >
                 <ExternalLink class="h-4 w-4" />
               </button>
