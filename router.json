@@ -1,0 +1,42 @@
+{
+  "version": 2,
+  "routes": [
+    {
+      "path": "/api/*",
+      "target": {
+        "type": "function",
+        "function": "api"
+      },
+      "continue": true
+    },
+    {
+      "path": "/static/*",
+      "target": {
+        "type": "static"
+      },
+      "continue": true
+    },
+    {
+      "path": "/assets/*",
+      "target": {
+        "type": "static"
+      },
+      "continue": true
+    },
+    {
+      "path": "/favicon.ico",
+      "target": {
+        "type": "static"
+      },
+      "continue": true
+    },
+    {
+      "path": "/*",
+      "target": {
+        "type": "static",
+        "file": "index.html"
+      },
+      "spa": true
+    }
+  ]
+}
