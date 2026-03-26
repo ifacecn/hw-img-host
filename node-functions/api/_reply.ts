@@ -6,7 +6,8 @@
  * @returns json
  */
 
-const reply = (code: number, msg: string, data) => {
+const reply = (code: number, msg: string, data: any) => {
+  console.log(`[Reply] code: ${code}, msg: ${msg}, data:`, data)
   return {
     code,
     msg,
