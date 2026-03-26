@@ -19,19 +19,55 @@ async function handleLogin() {
   error.value = ''
 
   try {
-    const { data } = await fetch('/api/admin/login', {
+    const requestData = { password: password.value }
+    console.log('发送登录请求:', { url: '/api/admin/login', data: requestData })
+    
+    const response = await fetch('/api/admin/login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ password: password.value }),
-    }).then((r) => r.json())
+      body: JSON.stringify(requestData),
+    })
 
-    if (data.code === 0) {
-      sessionStorage.setItem('admin_token', data.data.token)
+    console.log('登录响应状态:', response.status, response.statusText)
+    
+    // 检查响应类型
+    const contentType = response.headers.get('content-type')
+    console.log('响应Content-Type:', contentType)
+    
+    let result
+    if (contentType && contentType.includes('application/json')) {
+      try {
+        result = await response.json()
+        console.log('登录接口返回JSON:', result)
+      } catch (jsonError) {
+        console.error('JSON解析错误:', jsonError)
+        const text = await response.text()
+        console.error('原始响应文本:', text)
+        error.value = '服务器响应格式错误'
+        return
+      }
+    } else {
+      // 不是 JSON 响应
+      const text = await response.text()
+      console.error('非JSON响应:', text)
+      if (response.status === 401) {
+        error.value = '密码错误'
+      } else {
+        error.value = `服务器错误 (${response.status}): ${text.substring(0, 100)}`
+      }
+      return
+    }
+
+    // 处理返回结果
+    if (result && result.code === 0) {
+      console.log('登录成功，token:', result.data?.token)
+      sessionStorage.setItem('admin_token', result.data.token)
       router.push('/admin')
     } else {
-      error.value = data.msg || '登录失败'
+      error.value = result?.msg || '登录失败'
     }
-  } catch {
+  } catch (err) {
+    console.error('登录请求异常:', err)
     error.value = '网络错误，请重试'
   } finally {
     loading.value = false
