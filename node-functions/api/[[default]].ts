@@ -19,11 +19,14 @@ app.use((req, res, next) => {
   next()
 })
 
-// 调试中间件
+// 调试中间件（只记录非健康检查的请求）
 app.use((req, res, next) => {
-  console.log(`[API Debug] ${new Date().toISOString()} ${req.method} ${req.url}`)
-  console.log(`[API Debug] Headers:`, req.headers)
-  console.log(`[API Debug] Body:`, req.body)
+  if (req.url !== '/' && req.url !== '/favicon.ico') {
+    console.log(`[API Debug] ${new Date().toISOString()} ${req.method} ${req.url}`)
+    if (req.method === 'POST' && req.body) {
+      console.log(`[API Debug] Body keys:`, Object.keys(req.body))
+    }
+  }
   next()
 })
 
@@ -44,6 +47,19 @@ app.use((req, res, next) => {
 
 app.get('/', (req, res) => {
   res.json({ message: 'Hello from Express on Node Functions!' })
+})
+
+// 测试用的简单登录接口（无环境变量依赖）
+app.post('/test-login', (req, res) => {
+  const { password } = req.body || {}
+  console.log('[Test Login] 收到请求，密码:', password)
+  
+  if (password === 'admin123') {
+    const token = 'test-token-' + Date.now()
+    res.json({ code: 0, msg: '登录成功', data: { token } })
+  } else {
+    res.status(401).json({ code: 1, msg: '密码错误', data: null })
+  }
 })
 
 app.get('/img/*path', createProxyHandler(BASE_URL, requestConfig))
@@ -124,14 +140,27 @@ function extractImagePath(url) {
 
 // 管理密码验证
 app.post('/admin/login', (req, res) => {
-  const { password } = req.body
+  console.log('[Login API] 收到登录请求')
+  const { password } = req.body || {}
+  console.log('[Login API] 请求密码:', password ? '有值' : '空值')
+  
   const adminPassword = process.env.ADMIN_PASSWORD || 'admin123'
-  if (password === adminPassword) {
-    // 生成简单的 token（基于密码 + 时间戳的 hash）
+  console.log('[Login API] 预期密码:', adminPassword)
+  
+  if (password && password === adminPassword) {
+    console.log('[Login API] 密码验证成功')
+    // 生成简单的 token（基于密码 + 时间戳的 base64）
     const token = Buffer.from(`${adminPassword}:${Date.now()}`).toString('base64')
-    res.json(reply(0, '登录成功', { token }))
+    console.log('[Login API] 生成token:', token.substring(0, 20) + '...')
+    
+    const response = reply(0, '登录成功', { token })
+    console.log('[Login API] 返回响应:', response)
+    res.json(response)
   } else {
-    res.status(401).json(reply(1, '密码错误', null))
+    console.log('[Login API] 密码验证失败')
+    const response = reply(1, '密码错误', null)
+    console.log('[Login API] 返回响应:', response)
+    res.status(401).json(response)
   }
 })
 
