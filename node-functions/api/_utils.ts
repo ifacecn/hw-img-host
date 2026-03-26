@@ -87,4 +87,44 @@ function createProxyHandler(baseUrl, requestConfig) {
   }
 }
 
-export { uploadToCnb, createProxyHandler }
+/**
+ * 获取 CNB 仓库文件列表
+ * @param {string} type - 文件类型，默认 'imgs'
+ * @returns 文件列表
+ */
+async function listCnbFiles(type = 'imgs') {
+  const url = `https://api.cnb.cool/${process.env.SLUG_IMG}/-/tree/${type}`
+  const resp = await fetch(url, {
+    method: 'GET',
+    headers: {
+      Authorization: `Bearer ${process.env.TOKEN_IMG}`,
+    },
+  })
+  if (!resp.ok) {
+    throw new Error('Failed to list files')
+  }
+  return resp.json()
+}
+
+/**
+ * 删除 CNB 仓库中的文件
+ * @param {string} filePath - 文件路径（如 imgs/xxx.jpg）
+ * @returns 删除结果
+ */
+async function deleteCnbFile(filePath) {
+  const url = `https://api.cnb.cool/${process.env.SLUG_IMG}/-/rm`
+  const resp = await fetch(url, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${process.env.TOKEN_IMG}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ path: filePath }),
+  })
+  if (!resp.ok) {
+    throw new Error('Failed to delete file')
+  }
+  return resp.json()
+}
+
+export { uploadToCnb, createProxyHandler, listCnbFiles, deleteCnbFile }
