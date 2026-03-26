@@ -4,10 +4,97 @@
     <meta charset="UTF-8">
     <link rel="icon" href="/favicon.ico">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vite App</title>
+    <title>图片托管 - 管理后台</title>
+    <style>
+      .loading {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        z-index: 9999;
+      }
+      .loading-spinner {
+        width: 40px;
+        height: 40px;
+        border: 3px solid rgba(255,255,255,0.3);
+        border-radius: 50%;
+        border-top-color: white;
+        animation: spin 1s ease-in-out infinite;
+        margin-bottom: 20px;
+      }
+      @keyframes spin {
+        to { transform: rotate(360deg); }
+      }
+      .loading-error {
+        background: #ef4444;
+        color: white;
+        padding: 16px;
+        border-radius: 8px;
+        margin-top: 20px;
+        max-width: 600px;
+        text-align: center;
+      }
+    </style>
   </head>
   <body>
     <div id="app"></div>
+    <script>
+      // 全局错误捕获
+      window.addEventListener('error', function(event) {
+        console.error('全局错误:', event.error, event.error?.stack)
+        const loading = document.querySelector('.loading')
+        if (loading) {
+          loading.innerHTML = `
+            <div class="loading-error">
+              <h3>应用加载出错</h3>
+              <p>${event.error?.message || '未知错误'}</p>
+              <p><small>请打开浏览器开发者工具（F12）查看 Console 错误信息</small></p>
+              <button onclick="location.reload()" style="margin-top:10px; padding:8px 16px; background:white; color:#ef4444; border:none; border-radius:4px; cursor:pointer;">
+                刷新页面
+              </button>
+            </div>
+          `
+        }
+      })
+      
+      // Promise 错误捕获
+      window.addEventListener('unhandledrejection', function(event) {
+        console.error('未处理的 Promise 错误:', event.reason)
+      })
+      
+      // 显示加载状态
+      document.body.innerHTML += `
+        <div class="loading">
+          <div class="loading-spinner"></div>
+          <p>正在加载应用...</p>
+          <div id="debug-info" style="margin-top:20px; font-size:12px; opacity:0.7;">
+            如果长时间停留在此页面，请按 F12 打开开发者工具查看错误
+          </div>
+        </div>
+      `
+      
+      // 记录加载开始时间
+      console.log('页面开始加载...')
+      console.log('当前URL:', window.location.href)
+      console.log('UserAgent:', navigator.userAgent)
+    </script>
     <script type="module" src="/src/main.ts"></script>
+    <script>
+      // 应用加载完成后隐藏加载状态
+      window.addEventListener('DOMContentLoaded', () => {
+        setTimeout(() => {
+          const loading = document.querySelector('.loading')
+          if (loading) loading.style.display = 'none'
+        }, 1000)
+      })
+    </script>
   </body>
 </html>
