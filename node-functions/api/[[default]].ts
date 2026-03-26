@@ -5,6 +5,28 @@ import multer from 'multer'
 const upload = multer()
 const app = express()
 
+// 解析 JSON 请求体
+app.use(express.json())
+
+// CORS 中间件
+app.use((req, res, next) => {
+  res.header('Access-Control-Allow-Origin', '*')
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS')
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization')
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end()
+  }
+  next()
+})
+
+// 调试中间件
+app.use((req, res, next) => {
+  console.log(`[API Debug] ${new Date().toISOString()} ${req.method} ${req.url}`)
+  console.log(`[API Debug] Headers:`, req.headers)
+  console.log(`[API Debug] Body:`, req.body)
+  next()
+})
+
 const requestConfig = {
   responseType: 'arraybuffer',
   timeout: 5000,
