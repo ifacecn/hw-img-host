@@ -37,7 +37,7 @@ try {
   
   // 隐藏加载动画
   setTimeout(() => {
-    const loading = document.querySelector('.loading')
+    const loading = document.querySelector('.loading') as HTMLElement | null
     if (loading) {
       loading.style.display = 'none'
       console.log('加载动画已隐藏')
