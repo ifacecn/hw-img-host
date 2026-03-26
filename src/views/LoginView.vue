@@ -78,7 +78,14 @@ async function handleLogin() {
       // 延迟1秒后强制跳转（让用户看到成功消息）
       setTimeout(() => {
         console.log('⏱️ 1秒后强制跳转到 /admin')
-        window.location.href = '/admin'
+        // 判断当前是否在Hash模式下，如果是则使用Hash路由，否则让EdgeOne的重定向规则处理
+        if (window.location.hash || window.location.pathname === '/') {
+          // 当前在Hash模式或首页，使用Hash路由跳转
+          window.location.hash = '#/admin'
+        } else {
+          // 当前在非Hash模式，使用普通路由，EdgeOne会重定向到Hash模式
+          window.location.href = '/admin'
+        }
       }, 1000)
       
     } else {
