@@ -51,7 +51,7 @@ app.post(
       const baseUrl = process.env.BASE_IMG_URL
 
       const mainImgPath = extractImagePath(mainResult.url)
-      const mainUrl = baseUrl + mainImgPath
+      const mainUrl = baseUrl + 'api/img/' + mainImgPath
 
       let thumbnailUrl = null
       let thumbnailAssets = null
@@ -64,7 +64,7 @@ app.post(
         })
 
         const thumbnailImgPath = extractImagePath(thumbnailResult.url)
-        thumbnailUrl = baseUrl + thumbnailImgPath
+        thumbnailUrl = baseUrl + 'api/img/' + thumbnailImgPath
         thumbnailAssets = thumbnailResult.assets
       }
 
